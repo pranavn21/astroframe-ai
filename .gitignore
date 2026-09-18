@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environment
+.venv/
+
+# macOS
+.DS_Store
+
+# IDEs
+.vscode/
+.idea/
+
+# Local configuration
+.env
+
+# AstroFrame local data
+sample_data/*
+data/
+sessions/
+outputs/
+previews/
+
+# Astronomy image files
+*.fits
+*.fit
+*.fts
+*.xisf
+*.arw
+*.cr2
+*.cr3
+
+# Logs
+*.log
