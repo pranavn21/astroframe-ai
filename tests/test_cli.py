@@ -48,3 +48,23 @@ class CliTests(unittest.TestCase):
                     main([str(folder)])
             self.assertEqual(raised.exception.code, 1)
             self.assertIn("No FITS files found", error.getvalue())
+
+    def test_session_with_guiding_log(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory) / "session"
+            folder.mkdir()
+            header = fits.Header({"DATE-OBS": "2026-01-10T20:01:00Z", "EXPTIME": 10})
+            image = np.random.default_rng(123).normal(100, 2, (32, 32)).astype(np.float32)
+            fits.writeto(folder / "light.fit", image, header)
+            (folder / "bad.fit").write_text("invalid")
+            log = Path(directory) / "synthetic.txt"
+            log.write_text("Guiding Begins at 2026-01-10 20:01:00\nFrame,Time,mount,RARawDistance,DECRawDistance\n1,0,Mount,3,4\n2,10,Mount,-3,-4\n")
+            output = Path(directory) / "output"
+            with contextlib.redirect_stdout(io.StringIO()), self.assertLogs(level="WARNING"):
+                code = main([str(folder), "--output-dir", str(output), "--guide-log", str(log), "--guide-timezone", "UTC"])
+            self.assertEqual(code, 0)
+            frame = pd.read_csv(output / "session_metrics.csv")
+            self.assertEqual(frame["guide_sample_count"].iloc[0], 2)
+            self.assertEqual(frame["guide_total_rms_px"].iloc[0], 5)
+            self.assertTrue(pd.isna(frame["guide_total_rms_arcsec"].iloc[0]))
+            self.assertTrue((output / "session_guiding.csv").is_file())

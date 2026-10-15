@@ -55,7 +55,33 @@ def analyze_session(folder_path: str | Path) -> pd.DataFrame:
         logger.warning("Some frames have missing or invalid timestamps; sorting them last")
     result = result.sort_values("date_observed", kind="stable", na_position="last")
     result = result.reset_index(drop=True)
+    result = add_exposure_intervals(result)
     result.attrs["failed_files"] = failures
+    return result
+
+
+def add_exposure_intervals(df: pd.DataFrame) -> pd.DataFrame:
+    """Use DATE-OBS as exposure start and EXPTIME as duration in seconds."""
+    result = df.copy()
+    dates = pd.to_datetime(result["date_observed"], format="mixed", errors="coerce", utc=True)
+    seconds = pd.to_numeric(result["exposure_seconds"], errors="coerce")
+    systems = result.get("time_system", pd.Series("UTC", index=result.index))
+    starts, ends = [], []
+    for date, duration, system in zip(dates, seconds, systems):
+        start = end = pd.NaT
+        known = pd.isna(system) or str(system).strip().upper() in ("", "UTC")
+        if known and pd.notna(date) and pd.notna(duration) and np.isfinite(duration) and duration >= 0:
+            try:
+                start = date.as_unit("ns")
+                end = start + pd.to_timedelta(duration, unit="s")
+            except (ValueError, OverflowError):
+                start = end = pd.NaT
+        starts.append(start)
+        ends.append(end)
+    result["exposure_start"] = pd.Series(starts, index=result.index, dtype="datetime64[ns, UTC]")
+    result["exposure_end"] = pd.Series(ends, index=result.index, dtype="datetime64[ns, UTC]")
+    if result["exposure_end"].isna().any():
+        logger.warning("Some frames have invalid exposure times or unsupported TIMESYS values")
     return result
 
 

@@ -95,6 +95,7 @@ def read_fits_metadata(file_path: str) -> dict:
                 "DATE-OBS",
                 "DATEOBS",
             ),
+            "time_system": _get_header_value(headers, "TIMESYS"),
             "filter": _get_header_value(
                 headers,
                 "FILTER",
