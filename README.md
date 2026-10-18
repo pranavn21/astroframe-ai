@@ -71,3 +71,73 @@ ASIAIR formatting, timezone, and alignment still need validation on a real log.
 python -m unittest discover -s tests -v
 python -m compileall astroframe analyze_frame.py analyze_session.py
 ```
+
+## Diagnostic events (Day 5)
+
+Session analysis now saves `outputs/<session_name>_events.json` alongside the CSV
+and plots. Python groups affected frames and records measurements, possible
+causes, missing evidence, and up to two normal frames of context on each side.
+Cause labels are possibilities, not diagnoses. They require evidence on the
+same frame; missing guiding is never treated as normal guiding.
+Large star losses or background changes keep an otherwise guiding-like event
+unclear rather than assigning it to guiding alone.
+
+The frame CSV includes evidence flags for guiding, transparency, focus/seeing,
+and dither-related possibilities. Background below -25% now has a matching
+`low_background` flag. The image and guiding thresholds remain temporary
+heuristics and are not universal scientific cutoffs.
+
+The default grouping gap is 1.5 times the median interval between exposure
+starts. Set `--event-gap-seconds` to override it. Normal frames are not event
+members, though affected frames can share an event across a short normal gap.
+Frames without usable dates remain separate undated events.
+
+The events file also contains simple fitted trends for FWHM, star count,
+background, and each guiding unit. A trend needs at least three valid samples,
+a nonzero baseline, and more than 20% fitted change over the sampled interval.
+These describe the available session, not a forecast or a cause.
+
+## Optional local explanations
+
+```bash
+export OLLAMA_HOST="http://localhost:11434"
+export REASONING_MODEL="gpt-oss:20b"
+python analyze_session.py sample_data/my_session \
+  --guide-log sample_data/PHD2_GuideLog_example.txt \
+  --guide-timezone America/Chicago --diagnose
+```
+
+Set `OLLAMA_HOST` to your own server for LAN inference. Environment variables
+remain the configuration source. Without `--diagnose`, no Ollama requests are
+made and the full deterministic analysis works offline.
+
+With `--diagnose`, AstroFrame checks that Ollama and the selected model are
+available, then sends one summarized event at a time. The model only explains
+precomputed evidence. Its [JSON output](https://docs.ollama.com/capabilities/structured-outputs)
+must have the required fields, valid confidence, and an allowed cause label.
+Numeric claims must occur in the event evidence, allowing simple rounding.
+These checks cannot prove that prose uses the right metric or explains a cause
+correctly; explanations still need comparison with the original evidence.
+
+Results are saved incrementally to `outputs/<session_name>_diagnoses.json`.
+Each result retains its event evidence. Failed calls keep an error entry and
+do not discard earlier results or deterministic outputs. Only final model
+content is used; hidden reasoning is not saved. No automatic retries are made.
+
+Tests use generated FITS images, synthetic logs, and mocked Ollama responses.
+Live GPT-OSS and a real multi-frame session with a matching guide log have not
+been validated yet. Those remain manual, opt-in checks before trusting diagnoses.
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+python -m unittest discover -s tests -v
+python -m compileall astroframe analyze_frame.py analyze_session.py
+python analyze_frame.py sample_data/test_light.fit
+```
+
+To check your configured Ollama server manually:
+
+```bash
+python -c 'from astroframe.llm import check_ollama_connection; print(check_ollama_connection())'
+```

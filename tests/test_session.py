@@ -75,6 +75,13 @@ class StatisticsTests(unittest.TestCase):
         self.assertTrue(pd.isna(result["star_count_delta_percent"].iloc[1]))
         self.assertTrue(pd.isna(result["star_count_delta_percent"].iloc[3]))
 
+    def test_low_background_uses_a_strict_threshold(self):
+        frame = pd.DataFrame({"fwhm_delta_percent": [0, 0], "star_count_delta_percent": [0, 0],
+                              "background_delta_percent": [-25, -25.1]})
+        result = flag_anomalies(frame)
+        self.assertEqual(result["low_background"].tolist(), [False, True])
+        self.assertEqual(result["is_anomaly"].tolist(), [False, True])
+
 
 class SessionAnalysisTests(unittest.TestCase):
     def test_real_fits_io_sorting_raw_timestamps_and_corrupt_file(self):

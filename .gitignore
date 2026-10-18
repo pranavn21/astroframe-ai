@@ -35,3 +35,4 @@ previews/
 # Logs
 *.log
 PHD2_GuideLog*.txt
+.pytest_cache/

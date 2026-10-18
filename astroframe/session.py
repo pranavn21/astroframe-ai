@@ -107,10 +107,11 @@ def add_session_statistics(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def flag_anomalies(df: pd.DataFrame) -> pd.DataFrame:
-    """Apply temporary thresholds; MAD or rolling baselines can improve these later."""
+    """Flag large changes using temporary session thresholds."""
     result = df.copy()
     result["high_fwhm"] = (result["fwhm_delta_percent"] > 30).fillna(False)
     result["low_star_count"] = (result["star_count_delta_percent"] < -30).fillna(False)
     result["high_background"] = (result["background_delta_percent"] > 25).fillna(False)
-    result["is_anomaly"] = result[["high_fwhm", "low_star_count", "high_background"]].any(axis=1)
+    result["low_background"] = (result["background_delta_percent"] < -25).fillna(False)
+    result["is_anomaly"] = result[["high_fwhm", "low_star_count", "high_background", "low_background"]].any(axis=1)
     return result
