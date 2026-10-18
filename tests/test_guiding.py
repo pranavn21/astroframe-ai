@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from astroframe.guiding import calculate_guiding_rms, correlate_guiding_to_frames, parse_phd2_log
+from astroframe.guiding import add_guiding_statistics, calculate_guiding_rms, correlate_guiding_to_frames, parse_phd2_log
 from astroframe.session import add_exposure_intervals
 
 
@@ -131,6 +131,26 @@ class GuidingTests(unittest.TestCase):
         self.assertEqual(rms["total_rms_px"], 5)
         self.assertTrue(pd.isna(rms["total_rms_arcsec"]))
         self.assertTrue(all(pd.isna(value) for value in calculate_guiding_rms(pd.DataFrame()).values()))
+
+    def test_guiding_baselines_keep_units_separate(self):
+        frames = pd.DataFrame({"guide_sample_count": [10, 10, 10, 0],
+                               "guide_total_rms_px": [1, 1, 3, np.nan],
+                               "guide_total_rms_arcsec": [2, 2, 6, np.nan]})
+        result = add_guiding_statistics(frames)
+        self.assertEqual(result["session_median_guide_total_rms_px"].iloc[0], 1)
+        self.assertEqual(result["session_median_guide_total_rms_arcsec"].iloc[0], 2)
+        self.assertEqual(result["guiding_rms_delta_percent"].iloc[2], 200)
+        self.assertEqual(result["high_guiding_rms"].iloc[:3].tolist(), [False, False, True])
+        self.assertTrue(pd.isna(result["high_guiding_rms"].iloc[3]))
+
+    def test_zero_and_missing_guiding_baselines_stay_unknown(self):
+        for values in ([0, 0], [np.nan, np.nan]):
+            frames = pd.DataFrame({"guide_sample_count": [2, 2],
+                                   "guide_total_rms_px": values, "guide_total_rms_arcsec": [np.nan, np.nan]})
+            with np.errstate(divide="raise", invalid="raise"):
+                result = add_guiding_statistics(frames)
+            self.assertTrue(result["guiding_rms_delta_percent"].isna().all())
+            self.assertTrue(result["high_guiding_rms"].isna().all())
 
     def test_exposure_windows_and_no_overlap(self):
         self.frames.attrs["failed_files"] = ["bad.fit"]

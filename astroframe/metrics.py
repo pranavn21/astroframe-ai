@@ -4,11 +4,7 @@ from photutils.detection import DAOStarFinder
 
 
 def background_statistics(image: np.ndarray) -> dict:
-    """
-    Estimate the background level and noise of an astrophotography frame.
-
-    Sigma clipping reduces the influence of stars and other bright objects.
-    """
+    """Estimate background and noise with less influence from bright stars."""
 
     finite_pixels = image[np.isfinite(image)]
 
@@ -32,9 +28,7 @@ def detect_stars(
     threshold_sigma: float = 5.0,
     fwhm_guess: float = 3.0,
 ):
-    """
-    Detect stars in an astrophotography frame using DAOStarFinder.
-    """
+    """Find stars above the background."""
 
     background = background_statistics(image)
 
@@ -62,10 +56,7 @@ def _measure_star_fwhm(
     background: float,
     radius: int = 5,
 ):
-    """
-    Estimate stellar FWHM using the second moments of a small
-    background-subtracted stellar cutout.
-    """
+    """Estimate a star's FWHM from a small image cutout."""
 
     x_center = int(round(x))
     y_center = int(round(y))
@@ -132,9 +123,7 @@ def median_star_fwhm(
     image: np.ndarray,
     sources,
 ) -> float | None:
-    """
-    Estimate the median FWHM across detected stars.
-    """
+    """Find the median FWHM of the detected stars."""
 
     if sources is None or len(sources) == 0:
         return None
@@ -143,7 +132,7 @@ def median_star_fwhm(
 
     measurements = []
 
-    # To handle both versions of photutils, check for both possible column names
+    # Photutils uses different centroid names across versions.
     if "x_centroid" in sources.colnames:
         x_column = "x_centroid"
         y_column = "y_centroid"
@@ -176,9 +165,7 @@ def median_star_fwhm(
     return float(np.median(measurements))
 
 def analyze_image(image: np.ndarray) -> dict:
-    """
-    Calculate the initial AstroFrame quality metrics for one image.
-    """
+    """Calculate basic image-quality metrics for one frame."""
 
     background = background_statistics(image)
 

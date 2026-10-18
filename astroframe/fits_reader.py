@@ -5,10 +5,7 @@ from astropy.io import fits
 
 
 def _get_header_value(headers, *keys):
-    """
-    Return the first available FITS header value from a list
-    of possible keyword names.
-    """
+    """Return the first nonempty value found in these headers."""
 
     for header in headers:
         for key in keys:
@@ -21,9 +18,7 @@ def _get_header_value(headers, *keys):
 
 
 def load_fits_image(file_path: str) -> np.ndarray:
-    """
-    Load the image data from a FITS file as a 2D NumPy array.
-    """
+    """Load a FITS image as a 2D array."""
 
     path = Path(file_path)
 
@@ -54,9 +49,7 @@ def load_fits_image(file_path: str) -> np.ndarray:
 
 
 def read_fits_metadata(file_path: str) -> dict:
-    """
-    Extract useful astrophotography metadata from a FITS frame.
-    """
+    """Read basic capture details from the FITS headers."""
 
     path = Path(file_path)
 

@@ -169,6 +169,29 @@ def calculate_guiding_rms(df: pd.DataFrame) -> dict[str, float]:
     return result
 
 
+def add_guiding_statistics(df: pd.DataFrame, threshold_percent: float = 50) -> pd.DataFrame:
+    """Flag guiding RMS above a temporary session-relative threshold."""
+    if not np.isfinite(threshold_percent) or threshold_percent < 0:
+        raise ValueError("Guiding threshold must be finite and nonnegative")
+    result = df.copy()
+    counts = pd.to_numeric(result["guide_sample_count"], errors="coerce")
+    for unit in ("px", "arcsec"):
+        column = f"guide_total_rms_{unit}"
+        values = pd.to_numeric(result[column], errors="coerce")
+        values = values.where(np.isfinite(values) & (counts > 0) & (values >= 0))
+        median = values.median() if values.notna().any() else np.nan
+        result[f"session_median_guide_total_rms_{unit}"] = median
+        delta = (values - median) / median * 100 if pd.notna(median) and median > 0 else values * np.nan
+        result[f"guiding_rms_delta_percent_{unit}"] = delta
+        result[f"high_guiding_rms_{unit}"] = (delta > threshold_percent).astype("boolean").mask(delta.isna())
+    arcsec = pd.to_numeric(result["guide_total_rms_arcsec"], errors="coerce").notna()
+    result["guiding_rms_delta_percent"] = result["guiding_rms_delta_percent_arcsec"].where(
+        arcsec, result["guiding_rms_delta_percent_px"],
+    )
+    result["high_guiding_rms"] = result["high_guiding_rms_arcsec"].where(arcsec, result["high_guiding_rms_px"])
+    return result
+
+
 def correlate_guiding_to_frames(
     frames_df: pd.DataFrame, guiding_df: pd.DataFrame, *, buffer_seconds: float = 0,
 ) -> pd.DataFrame:
@@ -214,4 +237,4 @@ def correlate_guiding_to_frames(
     summary = pd.DataFrame(records, index=frames.index)
     for column in summary:
         frames[column] = summary[column]
-    return frames
+    return add_guiding_statistics(frames) if records else frames
