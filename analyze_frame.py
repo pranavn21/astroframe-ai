@@ -8,7 +8,7 @@ from astroframe.fits_reader import (
 from astroframe.metrics import analyze_image
 
 
-def main():
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Analyze one astrophotography FITS frame."
     )
@@ -18,13 +18,14 @@ def main():
         help="Path to a FITS image.",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    metadata = read_fits_metadata(args.file)
-
-    image = load_fits_image(args.file)
-
-    metrics = analyze_image(image)
+    try:
+        metadata = read_fits_metadata(args.file)
+        image = load_fits_image(args.file)
+        metrics = analyze_image(image)
+    except (OSError, ValueError) as exc:
+        parser.exit(1, f"Error: {exc}\n")
 
     result = {
         "metadata": metadata,
@@ -38,7 +39,8 @@ def main():
             default=str,
         )
     )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

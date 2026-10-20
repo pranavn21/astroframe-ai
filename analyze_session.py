@@ -19,8 +19,8 @@ def _display(value: float, decimals: int = 2) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Analyze a folder of FITS light frames.")
-    parser.add_argument("folder", type=Path)
-    parser.add_argument("--output-dir", type=Path, default=Path("outputs"))
+    parser.add_argument("folder", type=Path, help="Folder containing FITS light frames.")
+    parser.add_argument("--output-dir", type=Path, default=Path("outputs"), help="Output folder (default: outputs).")
     parser.add_argument("--guide-log", type=Path, help="PHD2 guiding log.")
     parser.add_argument("--guide-timezone", help="Verified log timezone, such as UTC or America/Chicago.")
     parser.add_argument("--buffer-seconds", type=float, default=0, help="Extra seconds around each guiding window.")

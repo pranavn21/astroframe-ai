@@ -96,6 +96,7 @@ class DiagnosisTests(unittest.TestCase):
         result = check_ollama_connection()
         self.assertTrue(result["reachable"])
         self.assertFalse(result["model_available"])
+        self.assertIn(f"ollama pull {REASONING_MODEL}", result["error"])
         for error in (requests.ConnectionError(), requests.Timeout()):
             get.side_effect = error
             result = check_ollama_connection()

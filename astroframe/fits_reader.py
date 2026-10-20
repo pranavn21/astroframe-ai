@@ -71,6 +71,8 @@ def read_fits_metadata(file_path: str) -> dict:
 
         image_header = image_hdu.header
         data = np.squeeze(image_hdu.data)
+        if data.ndim != 2:
+            raise ValueError(f"Expected a 2D FITS image, but received shape {data.shape}")
 
         headers = [image_header, primary_header]
 

@@ -50,7 +50,7 @@ def check_ollama_connection() -> dict:
         name = REASONING_MODEL if ":" in REASONING_MODEL else f"{REASONING_MODEL}:latest"
         status["model_available"] = REASONING_MODEL in names or name in names
         if not status["model_available"]:
-            status["error"] = "Configured Ollama model is not installed."
+            status["error"] = f"Ollama model '{REASONING_MODEL}' was not found. Install it with: ollama pull {REASONING_MODEL}"
     except requests.Timeout:
         status["error"] = "Ollama connection check timed out."
     except requests.RequestException:

@@ -13,6 +13,7 @@ import pandas as pd
 import requests
 
 from analyze_session import main
+from analyze_frame import main as analyze_frame
 from astroframe.plots import plot_background_timeline
 from config import REASONING_MODEL
 
@@ -24,6 +25,20 @@ class CliTests(unittest.TestCase):
             fits.writeto(folder / f"light_{number}.fit", np.zeros((8, 8)), header)
         return [{"background_mean": 100, "background_median": 100, "background_std": 2,
                  "star_count": 100, "median_fwhm_px": fwhm} for fwhm in (2, 2, 4)]
+
+    def test_single_frame_errors_are_readable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / "bad.fit").write_text("not a FITS file")
+            fits.writeto(folder / "line.fit", np.zeros(8))
+            for name, message in (("missing.fit", "not found"), ("bad.fit", "SIMPLE"), ("line.fit", "2D FITS image")):
+                with self.subTest(name=name), contextlib.redirect_stderr(io.StringIO()) as error:
+                    with self.assertRaises(SystemExit) as result:
+                        analyze_frame([str(folder / name)])
+                    self.assertEqual(result.exception.code, 1)
+                    self.assertTrue(error.getvalue().startswith("Error:"))
+                    self.assertIn(message, error.getvalue())
+                    self.assertNotIn("Traceback", error.getvalue())
 
     def test_session_csv_and_plots(self):
         with tempfile.TemporaryDirectory() as directory:
