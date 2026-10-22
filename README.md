@@ -141,3 +141,28 @@ To check your configured Ollama server manually:
 ```bash
 python -c 'from astroframe.llm import check_ollama_connection; print(check_ollama_connection())'
 ```
+
+## Day 7 testing
+
+Tested on macOS with Python 3.14.4 using 106 Veil Nebula
+(NGC 6960) light frames. Each exposure was 300 seconds.
+The two nights were analyzed separately.
+
+| Session    | Frames analyzed | Failed frames | Events |
+| ---------- | --------------: | ------------: | -----: |
+| 2025-06-21 |              54 |             0 |      1 |
+| 2025-06-22 |              52 |             0 |      0 |
+
+- All 48 automated tests passed. Six warnings came from test images with no detected stars.
+- Dependency and compilation checks passed.
+- CSV, JSON, and timeline plots were generated. Frame counts, timestamp ordering, and event membership checks passed.
+- Repeating the first session produced identical metrics and event files.
+- The synthetic control produced the expected event with a possible guiding cause.
+- When Ollama was unavailable, the analysis outputs were preserved and the diagnosis error was saved.
+
+The first night's flagged frame had fewer detected stars and a higher
+background. Its cause remained `insufficient_evidence`.
+
+Live Ollama testing, real guiding-log correlation, and manual checks
+against the images are still pending. These results confirm that the
+pipeline runs consistently, but do not establish measurement accuracy.
