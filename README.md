@@ -17,7 +17,7 @@ The project will analyze FITS subframes using objective astronomical image metri
 
 ## Architecture
 
-Development is performed on a client machine while local LLM inference can be hosted on another machine running Ollama.
+Development runs on a client machine, while local LLM inference can run on another machine with Ollama.
 
 No cloud LLM API is required!
 
@@ -38,8 +38,8 @@ offset or verified timezone, guide timestamps stay unqualified and are excluded
 from exposure matching. Ambiguous DST times also stay unavailable.
 
 The parser follows the [PHD2 log format](https://github.com/OpenPHDGuiding/phd2/wiki/PHD2GuideLog).
-It reads guiding sections, skips calibration, and warns on malformed rows.
-DROP, error, AO, and paused records are excluded from mount RMS. Raw distances
+It reads guiding sections, skips calibration, and warns on malformed rows.It excludes 
+DROP, error, AO, and paused records from mount RMS. Raw distances
 are pixels; arcseconds are calculated only when a positive pixel scale is logged.
 Exports with explicit `ra_error_arcsec` and `dec_error_arcsec` columns retain
 those values.
@@ -109,7 +109,7 @@ python analyze_session.py sample_data/my_session \
 
 Set `OLLAMA_HOST` to your own server for LAN inference. Environment variables
 remain the configuration source. Without `--diagnose`, no Ollama requests are
-made and the full deterministic analysis works offline.
+made, and the full deterministic analysis works offline.
 
 With `--diagnose`, AstroFrame checks that Ollama and the selected model are
 available, then sends one summarized event at a time. The model only explains
